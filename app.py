@@ -23,3 +23,4 @@ def hello_world(img_path):
 #     "gender": user.theme,
 #     "ethnicity": url_for("user_image", filename=user.image),
 #     }
+#

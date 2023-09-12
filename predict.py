@@ -266,12 +266,13 @@ def get_prediction(imgs_to_predict = [], determinism = True):
         pred_label = f"{pred_indicator}: {pred} {pred_prob:.1f}%"
         print(f"Predicted output: {pred_label}")
         if CLASS_AGE:
-          pred_dict['a']['label'] = pred
-          pred_dict['a']['prob'] = pred_prob_text
+            pred_dict['a']['label'] = pred
+            pred_dict['a']['prob'] = pred_prob_text
         elif CLASS_GENDER:
-          pred_dict['g']['label'] = pred
-          pred_dict['g']['prob'] = pred_prob_text
+            pred_dict['g']['label'] = pred
+            pred_dict['g']['prob'] = pred_prob_text
         elif CLASS_ETHNICITY:
-          pred_dict['e']['label'] = pred
-          pred_dict['e']['prob'] = pred_prob_text
+            pred_dict['e']['label'] = pred
+            pred_dict['e']['prob'] = pred_prob_text
   return pred_dict
+#
