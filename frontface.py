@@ -51,38 +51,32 @@ def is_frontal_face(image_path):
     return True
 
 
-def process_directory(directory):
-    target_sub_directory = 'frontal_faces'
-    target_directory = os.path.join(directory, target_sub_directory)
+def process_directory(src_directory, dest_root_directory):
+    # 获取目标目录路径
+    rel_path = os.path.relpath(src_directory, root_directory)
+    dest_directory = os.path.join(dest_root_directory, rel_path)
 
-    if not os.path.exists(target_directory):
-        os.makedirs(target_directory)
+    if not os.path.exists(dest_directory):
+        os.makedirs(dest_directory)
 
-    for filename in os.listdir(directory):
-        filepath = os.path.join(directory, filename)
+    for filename in os.listdir(src_directory):
+        filepath = os.path.join(src_directory, filename)
         if os.path.isdir(filepath):
             continue
         if filename.lower().endswith(('.png', '.jpg', '.jpeg')) and is_frontal_face(filepath):
-            shutil.copy(filepath, os.path.join(target_directory, filename))
+            shutil.copy(filepath, os.path.join(dest_directory, filename))
+            print("FIND AT:", filepath)
 
 
-def process_all_directories(root_directory):
+def process_all_directories(root_directory, dest_root_directory):
     # 获取所有子目录（包括多层子目录）
     directories = [dirpath for dirpath, dirnames, filenames in os.walk(root_directory)]
 
-    # 使用多进程并行处理所有目录
-    pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-    pool.map(process_directory, directories)
-    pool.close()
-    pool.join()
+    for directory in directories:
+        process_directory(directory, dest_root_directory)
 
 
-# 使用函数
+root_directory = r'G:\采样数据'
+dest_root_directory = r'D:\races'
 
-
-if __name__ == '__main__':
-    multiprocessing.freeze_support()
-
-    # Using the functions
-    root_directory = r'D:\races'
-    process_all_directories(root_directory)
+process_all_directories(root_directory, dest_root_directory)
