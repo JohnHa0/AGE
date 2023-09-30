@@ -64,25 +64,31 @@ for _, row in df.iterrows():
 
 # 4. 将收集的数据转换为dataframe
 expanded_df = pd.DataFrame(expanded_data)
+df_new = pd.DataFrame(columns=cols_order)
+
+df_new['img_idx'] = expanded_df['img_idx']
+df_new['gender'] = expanded_df['gender']
+df_new['age'] = expanded_df['age']
+df_new['ethnicity'] = expanded_df['ethnicity']
 
 # Labeled for gender and nationality
 
-expanded_df['gender_label'] = expanded_df['gender'].map(gender_encoding)
-expanded_df['ethnicity_label'] = expanded_df['ethnicity'].map(lambda x: nation_encoding.get(x, 8))
+df_new['gender_label'] = expanded_df['gender'].map(gender_encoding)
+df_new['ethnicity_label'] = expanded_df['ethnicity'].map(lambda x: nation_encoding.get(x, 8))
 
 # labeled for ages
 # LABEL_TO_AGE_RANGES = ['0-18', '19-30', '31-40', '41-50', '51-60', '61-80', '81-100']
 bins = [18, 30, 40, 50, 60, 80, 100]
-age_ranges = ['18-30', '31-40', '41-50', '51-60', '61-80', '81-100']
+age_ranges = ['18-30', '31-40', '41-50', '51-60', '61-80', '81-100']  # !!!!age =0 will not gain the data !!!!
 # age_labels = ['0', '1', '2', '3', '4', '5','6']
 # 使用cut函数进行分段编码 Right false 左闭右开
-expanded_df['age_cat'] = pd.cut(expanded_df['age'], bins=bins, labels=age_ranges, right=False)
+df_new['age_cat'] = pd.cut(expanded_df['age'], bins=bins, labels=age_ranges, right=False)
 
 # 为年龄段提供数字编码，可以再添加一个编码列
 age_labels = {label: idx for idx, label in enumerate(age_ranges)}
-expanded_df['age_label'] = expanded_df['age_cat'].map(age_labels)
+df_new['age_label'] = df_new['age_cat'].map(age_labels)
 
 # Reorder
-expanded_df = expanded_df[cols_order]
+# expanded_df = expanded_df[cols_order]
 # Save files
-expanded_df.to_excel("./data/data_with_labels_new.xlsx", index=False)
+df_new.to_excel("./data/data_with_labels_new.xlsx", index=False)
