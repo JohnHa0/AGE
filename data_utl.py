@@ -37,9 +37,9 @@ def generate_file_names(folder, number_pattern):
     if isinstance(number_pattern, str):
         if '-' in number_pattern:
             start, end = map(int, number_pattern.split('-'))
-            return [f"IMG_{folder}/{i}.jpg" for i in range(start, end + 1)]
+            return [f"{folder}/IMG_{i}.jpg" for i in range(start, end + 1)]
         else:
-            return [f"IMG_{folder}/{number_pattern}.jpg"]
+            return [f"{folder}/IMG_{number_pattern}.jpg"]
     return []
 
 all_paths = []

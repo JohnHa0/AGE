@@ -25,6 +25,7 @@ def rename_folders(base_path, keywords):
             os.rename(folder_path, new_folder_path)
 
 # 使用示例
-base_path = "/path/to/your/directory"  # 替换为你的文件夹路径
+base_path = r'D:\races\data'  # 替换为你的文件夹路径
 keywords = ["keyword1", "keyword2", "keyword3"]  # 替换为你的关键词列表
 rename_folders(base_path, keywords)
+

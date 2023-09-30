@@ -27,10 +27,9 @@ def create_excel(file_list, output_file):
 
 if __name__ == "__main__":
     # directory_path = input("请输入文件夹路径：")
-    directory_path = './images'
+    directory_path = 'D:/races'
     # output_file = input("请输入输出Excel文件的路径（例如：output.xlsx）：")
-    output_file = './images/file_lists.xlsx'
-
+    output_file = 'D:/races/file_lists.xlsx'
 
     files = list_files_in_directory(directory_path)
     create_excel(files, output_file)
