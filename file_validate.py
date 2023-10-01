@@ -19,4 +19,4 @@ df = df[df['img_idx'].apply(os.path.exists)]
 # df = df[df['img_idx'].apply(lambda x: os.path.exists(str(x)))]
 
 # 保存更改后的Excel文件
-df.to_excel('./data/data_with_label_validate.xlsx', index=False)  # 替换为你想要保存的Excel文件路径
+df.to_excel('./data/data_with_label_validate.xlsx', index=True)  # 替换为你想要保存的Excel文件路径

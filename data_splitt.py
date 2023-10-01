@@ -3,7 +3,7 @@ from sklearn.model_selection import train_test_split
 
 # 读取Excel文件
 file_path = './data/data_with_label_validate.xlsx'  # 替换为你的Excel文件路径
-df = pd.read_excel(file_path)
+df = pd.read_excel(file_path, index_col=0)
 
 # 定义数据分割的比例
 train_ratio = 0.7
@@ -23,10 +23,10 @@ print(f"Validation data: {len(validation_data)} rows")
 print(f"Test data: {len(test_data)} rows")
 
 # 如果需要，可以将这些子集保存到新的Excel文件中
-train_data.to_excel('./data/train_data.xlsx', index=False)
-validation_data.to_excel('./data/validation_data.xlsx', index=False)
-test_data.to_excel('./data/test_data.xlsx', index=False)
+train_data.to_excel('./data/train_data.xlsx', index=True)
+validation_data.to_excel('./data/validation_data.xlsx', index=True)
+test_data.to_excel('./data/test_data.xlsx', index=True)
 
-train_data.to_csv('./data/train_data.csv', index=False)
-validation_data.to_csv('./data/validation_data.csv', index=False)
-test_data.to_csv('./data/test_data.csv', index=False)
+train_data.to_csv('./data/train_data.csv', index=True)
+validation_data.to_csv('./data/validation_data.csv', index=True)
+test_data.to_csv('./data/test_data.csv', index=True)
