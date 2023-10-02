@@ -77,6 +77,9 @@ for _, row in df.iterrows():
 
 # 4. 将收集的数据转换为dataframe
 expanded_df = pd.DataFrame(expanded_data)
+# 格式化
+expanded_df = replace_characters(expanded_df)
+
 df_new = pd.DataFrame(columns=cols_order)
 
 
@@ -85,8 +88,7 @@ df_new['gender'] = expanded_df['gender']
 df_new['age'] = expanded_df['age']
 df_new['ethnicity'] = expanded_df['ethnicity']
 
-# 格式化
-df_new = replace_characters(df_new)
+
 
 # Labeled for gender and nationality
 
