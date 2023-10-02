@@ -1253,520 +1253,520 @@ images = read_and_preprocess_img_list(df.index[38:46], True, num_cols=4, transfo
 if __name__ == '__main__':
   print("Setting up the model")
   # Create the base model and its functions
-  class BaseModel(pl.LightningModule):
-    def __init__(self, learning_rate=None, predict_viz_image_limit=predict_viz_image_limit):
-      super().__init__()
-      #initialize variables
-      self.learning_rate = learning_rate
-      self.bn_init = nn.BatchNorm2d(3)
-      self.training_step_outputs = []
-      self.valid_step_outputs = []
-      self.test_step_outputs = []
-      self.predict_step_outputs = []
-      self.reference_image = None
-      self.predict_viz_image_limit = predict_viz_image_limit
-      self.model_visualized = False
+class BaseModel(pl.LightningModule):
+  def __init__(self, learning_rate=None, predict_viz_image_limit=predict_viz_image_limit):
+    super().__init__()
+    #initialize variables
+    self.learning_rate = learning_rate
+    self.bn_init = nn.BatchNorm2d(3)
+    self.training_step_outputs = []
+    self.valid_step_outputs = []
+    self.test_step_outputs = []
+    self.predict_step_outputs = []
+    self.reference_image = None
+    self.predict_viz_image_limit = predict_viz_image_limit
+    self.model_visualized = False
 
-    def forward(self,x):
-      # normalization
-      return self.bn_init(x)
-        
-    def configure_optimizers(self):
-      # using different optimizers
-      params = self.parameters()
-      lr = self.learning_rate if self.learning_rate else LR
-      if optimi=='Adam': 
-        optimizer = torch.optim.Adam(params, lr, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad)
-      elif optimi=='AdamW':
-        optimizer = torch.optim.AdamW(params, lr, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad)
-      elif optimi=='NAdam': 
-        optimizer = torch.optim.NAdam(params, lr, betas=betas, eps=eps, weight_decay=weight_decay, momentum_decay=momentum_decay)
-      elif optimi=='SGD': 
-        optimizer = torch.optim.SGD(params, lr, momentum=momentum, dampening=dampening, weight_decay=weight_decay, nesterov=nesetrov)
-      elif optimi=='RMSprop': 
-        optimizer = torch.optim.RMSprop(params, lr, alpha=alpha, eps=eps, weight_decay=weight_decay, momentum=momentum, centered=centered)
-      elif optimi=='Adadelta':
-        optimizer = torch.optim.Adadelta(params, lr, rho=rho, eps=eps, weight_decay=weight_decay)
-      elif optimi=='Adamax':
-        optimizer = torch.optim.Adamax(params, lr, betas=betas, eps=eps, weight_decay=weight_decay)
-      # different schedulers
-      scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', verbose=True, factor=SCHEDULER_FACTOR, patience=SCHEDULER_PATIENCE, threshold=SCHEDULER_THRESHOLD)
-      if USE_ONECYCLE:
-        scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=1e-3, total_steps=self.trainer.estimated_stepping_batches, verbose=True, div_factor=CYCLE_DIV_FACTOR, final_div_factor=CYCLE_FINAL_DIV_FACTOR)
-      if USE_SCHEDULER:
-        return {
-        'optimizer': optimizer,
-        'lr_scheduler': {
-          'scheduler': scheduler,
-          'monitor': METRIC_TO_MONITOR    
-          }
+  def forward(self,x):
+    # normalization
+    return self.bn_init(x)
+      
+  def configure_optimizers(self):
+    # using different optimizers
+    params = self.parameters()
+    lr = self.learning_rate if self.learning_rate else LR
+    if optimi=='Adam': 
+      optimizer = torch.optim.Adam(params, lr, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad)
+    elif optimi=='AdamW':
+      optimizer = torch.optim.AdamW(params, lr, betas=betas, eps=eps, weight_decay=weight_decay, amsgrad=amsgrad)
+    elif optimi=='NAdam': 
+      optimizer = torch.optim.NAdam(params, lr, betas=betas, eps=eps, weight_decay=weight_decay, momentum_decay=momentum_decay)
+    elif optimi=='SGD': 
+      optimizer = torch.optim.SGD(params, lr, momentum=momentum, dampening=dampening, weight_decay=weight_decay, nesterov=nesetrov)
+    elif optimi=='RMSprop': 
+      optimizer = torch.optim.RMSprop(params, lr, alpha=alpha, eps=eps, weight_decay=weight_decay, momentum=momentum, centered=centered)
+    elif optimi=='Adadelta':
+      optimizer = torch.optim.Adadelta(params, lr, rho=rho, eps=eps, weight_decay=weight_decay)
+    elif optimi=='Adamax':
+      optimizer = torch.optim.Adamax(params, lr, betas=betas, eps=eps, weight_decay=weight_decay)
+    # different schedulers
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', verbose=True, factor=SCHEDULER_FACTOR, patience=SCHEDULER_PATIENCE, threshold=SCHEDULER_THRESHOLD)
+    if USE_ONECYCLE:
+      scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=1e-3, total_steps=self.trainer.estimated_stepping_batches, verbose=True, div_factor=CYCLE_DIV_FACTOR, final_div_factor=CYCLE_FINAL_DIV_FACTOR)
+    if USE_SCHEDULER:
+      return {
+      'optimizer': optimizer,
+      'lr_scheduler': {
+        'scheduler': scheduler,
+        'monitor': METRIC_TO_MONITOR    
         }
-      return [optimizer]
+      }
+    return [optimizer]
 
-    def custom_histogram_adder(self):
-      # iterating through and logging all parameters
-      if self.logger:
-        for name,params in self.named_parameters():
-          self.logger.experiment.add_histogram(name,params,self.current_epoch)
-        
+  def custom_histogram_adder(self):
+    # iterating through and logging all parameters
+    if self.logger:
+      for name,params in self.named_parameters():
+        self.logger.experiment.add_histogram(name,params,self.current_epoch)
+      
+  
+  def setup(self, stage):
+    # add all hyperparameters to tensorboard
+    if self.logger:
+      self.logger.experiment.add_text("PARAMS", str(PARAMS))
+
+  # Common step between train, val, test, and pred
+  def do_step(self, batch, mode='Train'):
+    images = batch['image']
+    preds = self(images)
+    # don't log in train
+    if self.logger and not mode in ['Train', 'Predict']:
+      if not torch.is_tensor(self.reference_image):
+        # storing reference images for visualizations
+        vis_images = images[2:6]
+        self.reference_image = images[:1]
+        self.visualize_images = batch['image'][2:6]
+        self.visualize_images_idxs = batch['img_idx'][2:6]
+        self.visualize_labels_age = batch['age_label'][2:6]
+        self.visualize_labels_ethnicity = batch['ethnicity_label'][2:6]
+        self.visualize_labels_gender = batch['gender_label'][2:6]
+        if not self.model_visualized and not Multitasking:
+          self.logger.experiment.add_graph(FacesModel, self.reference_image)
+          self.model_visualized = True
+    # get different metrics for this batch
+    if Multitasking:
+      batch_dict = multi_batch_performance_metrics(batch, preds, loss_weights=self.trainer.datamodule.loss_weights)
+    else:
+      batch_dict = batch_performance_metrics(batch, preds, loss_weights=self.trainer.datamodule.loss_weights)
+      
+    return batch_dict
+
+  
+  def training_step(self, batch, batch_idx):
+    batch_dict = self.do_step(batch, mode='Train')
+    self.training_step_outputs.append(batch_dict)
+    # Have to return something or otherwise cuda out of memory
+    return batch_dict
+      
+
+  def validation_step(self, batch, batch_idx):
+    batch_dict = self.do_step(batch, mode='Valid')
+    self.valid_step_outputs.append(batch_dict)
+    return batch_dict
+
+
+  def test_step(self, batch, batch_idx):
+    batch_dict = self.do_step(batch, mode='Test')
+    self.test_step_outputs.append(batch_dict)
+    return batch_dict
+
+  
+  def predict_step(self, batch, batch_idx):
+    images = batch['image']
+    num_of_imgs = min(images.size()[0], self.predict_viz_image_limit)
+    preds = self(images)
+    return preds, images[:num_of_imgs]
+      
+
+  def on_epoch_end(self, outputs, mode='Train'):
+    epoch_dict = epoch_performance_metrics(outputs)
+
+    # get variety of metrics
+    precision_dict = dict(zip(CLASS_RANGES, epoch_dict['precision']))
+    recall_dict = dict(zip(CLASS_RANGES, epoch_dict['recall']))
+    f1_score_dict = dict(zip(CLASS_RANGES, epoch_dict['f1_score']))
+    accuracy_dict = dict(zip(CLASS_RANGES, epoch_dict['accuracy']))
+
+    epoch_loss = epoch_dict['total_loss']
+    epoch_acc = epoch_dict['total_accuracy']
+    epoch_macro_f1 =  epoch_dict['macro_f1']
+
+    print(f"\n{mode} accuracy : ", epoch_acc)
+    print(f"{mode} loss : ", epoch_loss)
     
-    def setup(self, stage):
-      # add all hyperparameters to tensorboard
-      if self.logger:
-        self.logger.experiment.add_text("PARAMS", str(PARAMS))
-
-    # Common step between train, val, test, and pred
-    def do_step(self, batch, mode='Train'):
-      images = batch['image']
-      preds = self(images)
-      # don't log in train
-      if self.logger and not mode in ['Train', 'Predict']:
-        if not torch.is_tensor(self.reference_image):
-          # storing reference images for visualizations
-          vis_images = images[2:6]
-          self.reference_image = images[:1]
-          self.visualize_images = batch['image'][2:6]
-          self.visualize_images_idxs = batch['img_idx'][2:6]
-          self.visualize_labels_age = batch['age_label'][2:6]
-          self.visualize_labels_ethnicity = batch['ethnicity_label'][2:6]
-          self.visualize_labels_gender = batch['gender_label'][2:6]
-          if not self.model_visualized and not Multitasking:
-            self.logger.experiment.add_graph(FacesModel, self.reference_image)
-            self.model_visualized = True
-      # get different metrics for this batch
-      if Multitasking:
-        batch_dict = multi_batch_performance_metrics(batch, preds, loss_weights=self.trainer.datamodule.loss_weights)
-      else:
-        batch_dict = batch_performance_metrics(batch, preds, loss_weights=self.trainer.datamodule.loss_weights)
+    if self.logger:
+      self.logger.experiment.add_scalar(f"Loss/{mode}",
+                                        epoch_loss,
+                                        self.current_epoch)
+      self.logger.experiment.add_scalar(f"Accuracy/{mode}",
+                                        epoch_acc,
+                                        self.current_epoch)
+      if not mode == 'train':
+        #for checkpointing
+        self.log(f"{mode}_macro_f1", epoch_macro_f1)
+        self.log(f"{mode}_acc", epoch_acc)
+        self.log(f"{mode}_both", epoch_acc+epoch_macro_f1)
+        self.log("epoch", float(self.current_epoch))
         
-      return batch_dict
-
-    
-    def training_step(self, batch, batch_idx):
-      batch_dict = self.do_step(batch, mode='Train')
-      self.training_step_outputs.append(batch_dict)
-      # Have to return something or otherwise cuda out of memory
-      return batch_dict
+        print(f"{mode} macro_f1 score : ", epoch_macro_f1)
+        print(f"{mode} both : ", epoch_acc+epoch_macro_f1)
         
+        # Tensorboard visualizations     
+        self.logger.experiment.add_scalar(f"Macro_f1/{mode}",
+                                          epoch_macro_f1,
+                                          self.current_epoch)
+        self.logger.experiment.add_scalar(f"Acc+Macro_f1/{mode}",
+                                          epoch_acc+epoch_macro_f1,
+                                          self.current_epoch)
+        logger.experiment.add_figure("Confusion matrix", epoch_dict['conf_mat'], self.current_epoch)
+        if torch.is_tensor(self.reference_image):
+          pred_vs_act_fig = plot_classes_preds(self, self.visualize_images, self.visualize_images_idxs, self.visualize_labels_age, self.visualize_labels_gender, self.visualize_labels_ethnicity)
+          pred_vs_act_fig.savefig(f'outputs/testing-{get_time()}.png')
+          self.logger.experiment.add_figure('predictions vs. actuals',
+            pred_vs_act_fig,
+            self.current_epoch)
+        # logging histograms - Can slow down the model
+        self.custom_histogram_adder()
+        self.reference_image = None
+        self.visualize_images = None
+        self.visualize_images_idxs = None
+        self.visualize_labels_age = None
+        self.visualize_labels_ethnicity = None
+        self.visualize_labels_gender = None
 
-    def validation_step(self, batch, batch_idx):
-      batch_dict = self.do_step(batch, mode='Valid')
-      self.valid_step_outputs.append(batch_dict)
-      return batch_dict
+  
+  
+  def multi_on_epoch_end(self, outputs, mode='Train'):
+    epoch_dicts = multi_epoch_performance_metrics(outputs)
+    loss = epoch_dicts['a']['total_loss']
+    print(f"total {mode} loss : ", loss)
+    # going through each of the three tasks: age, gender, and ethnicity and calculate the results
+    for task in classifying_option[1:]:
+      if task == 'a':
+        label = "Results for age"
+      if task == 'g':
+        label = "Results for gender"
+      if task == 'e':
+        label = "Results for ethnicity"
 
-
-    def test_step(self, batch, batch_idx):
-      batch_dict = self.do_step(batch, mode='Test')
-      self.test_step_outputs.append(batch_dict)
-      return batch_dict
-
-    
-    def predict_step(self, batch, batch_idx):
-      images = batch['image']
-      num_of_imgs = min(images.size()[0], self.predict_viz_image_limit)
-      preds = self(images)
-      return preds, images[:num_of_imgs]
-        
-
-    def on_epoch_end(self, outputs, mode='Train'):
-      epoch_dict = epoch_performance_metrics(outputs)
-
-      # get variety of metrics
-      precision_dict = dict(zip(CLASS_RANGES, epoch_dict['precision']))
-      recall_dict = dict(zip(CLASS_RANGES, epoch_dict['recall']))
-      f1_score_dict = dict(zip(CLASS_RANGES, epoch_dict['f1_score']))
-      accuracy_dict = dict(zip(CLASS_RANGES, epoch_dict['accuracy']))
-
+      epoch_dict = epoch_dicts[task]
+      
+      print('\n')
+      print(label)
       epoch_loss = epoch_dict['total_loss']
       epoch_acc = epoch_dict['total_accuracy']
       epoch_macro_f1 =  epoch_dict['macro_f1']
 
       print(f"\n{mode} accuracy : ", epoch_acc)
-      print(f"{mode} loss : ", epoch_loss)
-      
+
       if self.logger:
-        self.logger.experiment.add_scalar(f"Loss/{mode}",
-                                          epoch_loss,
-                                          self.current_epoch)
-        self.logger.experiment.add_scalar(f"Accuracy/{mode}",
-                                          epoch_acc,
-                                          self.current_epoch)
-        if not mode == 'train':
-          #for checkpointing
-          self.log(f"{mode}_macro_f1", epoch_macro_f1)
-          self.log(f"{mode}_acc", epoch_acc)
-          self.log(f"{mode}_both", epoch_acc+epoch_macro_f1)
-          self.log("epoch", float(self.current_epoch))
-          
-          print(f"{mode} macro_f1 score : ", epoch_macro_f1)
-          print(f"{mode} both : ", epoch_acc+epoch_macro_f1)
-          
-          # Tensorboard visualizations     
-          self.logger.experiment.add_scalar(f"Macro_f1/{mode}",
+        self.logger.experiment.add_scalar(f"Loss/{task}_{mode}",
+                                            epoch_loss,
+                                            self.current_epoch)
+        self.logger.experiment.add_scalar(f"Accuracy/{task}_{mode}",
+                                            epoch_acc,
+                                            self.current_epoch)
+      if not mode == 'train':
+        #for checkpointing
+        self.log(f"{mode}_macro_f1", epoch_macro_f1)
+        self.log(f"{mode}_acc", epoch_acc)
+        self.log(f"{mode}_both", epoch_acc+epoch_macro_f1)
+        self.log(f"{mode}_total_loss", epoch_loss)
+        self.log("epoch", float(self.current_epoch))
+
+        print(f"{mode} macro_f1 score : ", epoch_macro_f1)
+        print(f"{mode} both : ", epoch_acc+epoch_macro_f1)
+
+        # Tensorboard visualizations     
+
+        self.logger.experiment.add_scalar(f"Macro_f1/{task}_{mode}",
                                             epoch_macro_f1,
                                             self.current_epoch)
-          self.logger.experiment.add_scalar(f"Acc+Macro_f1/{mode}",
+        self.logger.experiment.add_scalar(f"Acc+Macro_f1/{task}_{mode}",
                                             epoch_acc+epoch_macro_f1,
                                             self.current_epoch)
-          logger.experiment.add_figure("Confusion matrix", epoch_dict['conf_mat'], self.current_epoch)
-          if torch.is_tensor(self.reference_image):
-            pred_vs_act_fig = plot_classes_preds(self, self.visualize_images, self.visualize_images_idxs, self.visualize_labels_age, self.visualize_labels_gender, self.visualize_labels_ethnicity)
-            pred_vs_act_fig.savefig(f'outputs/testing-{get_time()}.png')
-            self.logger.experiment.add_figure('predictions vs. actuals',
-              pred_vs_act_fig,
-              self.current_epoch)
-          # logging histograms - Can slow down the model
-          self.custom_histogram_adder()
-          self.reference_image = None
-          self.visualize_images = None
-          self.visualize_images_idxs = None
-          self.visualize_labels_age = None
-          self.visualize_labels_ethnicity = None
-          self.visualize_labels_gender = None
+        logger.experiment.add_figure("Confusion matrix", epoch_dict['conf_mat'], self.current_epoch)
+        # logging histograms - Can slow down the model
+        #self.custom_histogram_adder()
+        self.reference_image = None
+        self.visualize_images = None
+        self.visualize_images_idxs = None
+        self.visualize_labels_age = None
+        self.visualize_labels_ethnicity = None
+        self.visualize_labels_gender = None
 
-    
-    
-    def multi_on_epoch_end(self, outputs, mode='Train'):
-      epoch_dicts = multi_epoch_performance_metrics(outputs)
-      loss = epoch_dicts['a']['total_loss']
-      print(f"total {mode} loss : ", loss)
-      # going through each of the three tasks: age, gender, and ethnicity and calculate the results
-      for task in classifying_option[1:]:
-        if task == 'a':
-          label = "Results for age"
-        if task == 'g':
-          label = "Results for gender"
-        if task == 'e':
-          label = "Results for ethnicity"
+  def on_train_epoch_end(self):
+    outputs = self.training_step_outputs
+    print(f"\nTraining for {training_indicator}")
+    if Multitasking:
+      self.multi_on_epoch_end(outputs, mode='Train')
+    else:
+      self.on_epoch_end(outputs, mode='Train')
+    self.training_step_outputs.clear()  # free memory
+      
+  def on_validation_epoch_end(self):
+    outputs = self.valid_step_outputs
+    if Multitasking:
+      self.multi_on_epoch_end(outputs, mode='Val')
+    else:
+      self.on_epoch_end(outputs, mode='Val')
+    self.valid_step_outputs.clear()  # free memory
 
-        epoch_dict = epoch_dicts[task]
-        
-        print('\n')
-        print(label)
-        epoch_loss = epoch_dict['total_loss']
-        epoch_acc = epoch_dict['total_accuracy']
-        epoch_macro_f1 =  epoch_dict['macro_f1']
+  def on_test_epoch_end(self):
+    outputs = self.test_step_outputs
+    if Multitasking:
+      self.multi_on_epoch_end(outputs, mode='Test')
+    else:
+      self.on_epoch_end(outputs, mode='Test')      
+    self.test_step_outputs.clear()  # free memory
 
-        print(f"\n{mode} accuracy : ", epoch_acc)
+#3 basics cnv model that adapts to number of layers
+class Basic_cnv(BaseModel):
+  def __init__(self, num_of_layers):
+    super().__init__()
+    self.bn1 = nn.BatchNorm2d(base_features)
+    self.bn2 = nn.BatchNorm2d(base_features*2)
+    self.bn3 = nn.BatchNorm2d(base_features*4)
+    self.bn4 = nn.BatchNorm2d(base_features*8)
+    self.bn5 = nn.BatchNorm2d(base_features*16)
+    self.doi = nn.Dropout(0.1)
+    self.do1 = nn.Dropout(0.1)
+    self.do2 = nn.Dropout(0.1)
+    self.do3 = nn.Dropout(0.1)
+    self.do4 = nn.Dropout(0.1)
+    self.do5 = nn.Dropout(0.1)
+    self.doo = nn.Dropout(0.6)
+    self.cnv1 = nn.Conv2d(3, base_features, kernel_size = 3, padding = 1)
+    self.cnv2 = nn.Conv2d(base_features, base_features*2, kernel_size = 3, padding = 1)
+    self.cnv3 = nn.Conv2d(base_features*2, base_features*4, kernel_size = 3, padding = 1)
+    self.cnv4 = nn.Conv2d(base_features*4, base_features*8, kernel_size = 3, padding = 1)
+    self.cnv5 = nn.Conv2d(base_features*8, base_features*16, kernel_size = 3, padding = 1)
+    self.rel1 = nn.ReLU()
+    self.rel2 = nn.ReLU()
+    self.rel3 = nn.ReLU()
+    self.rel4 = nn.ReLU()
+    self.rel5 = nn.ReLU()
+    self.relo = nn.ReLU()
+    self.max1 = nn.MaxPool2d(2, 2)
+    self.max2 = nn.MaxPool2d(2, 2)
+    self.max3 = nn.MaxPool2d(2, 2)
+    self.max4 = nn.MaxPool2d(2, 2)
+    self.max5 = nn.MaxPool2d(2, 2)
+    self.flat = nn.Flatten()
+    num_of_features = int(IMG_SIZE/(2**num_of_layers))
+    num_of_features *= num_of_features
+    num_of_features *= base_features * (2**(num_of_layers-1))
+    self.fc1 = nn.Linear(num_of_features, hidden_neurons)
+    self.fc2 = nn.Linear(hidden_neurons, CLASSES)
+    if Multitasking:
+      self.fc_a = nn.Linear(hidden_neurons, 7)
+      self.fc_g = nn.Linear(hidden_neurons, 2)
+      self.fc_e = nn.Linear(hidden_neurons, 5)
 
-        if self.logger:
-          self.logger.experiment.add_scalar(f"Loss/{task}_{mode}",
-                                              epoch_loss,
-                                              self.current_epoch)
-          self.logger.experiment.add_scalar(f"Accuracy/{task}_{mode}",
-                                              epoch_acc,
-                                              self.current_epoch)
-        if not mode == 'train':
-          #for checkpointing
-          self.log(f"{mode}_macro_f1", epoch_macro_f1)
-          self.log(f"{mode}_acc", epoch_acc)
-          self.log(f"{mode}_both", epoch_acc+epoch_macro_f1)
-          self.log(f"{mode}_total_loss", epoch_loss)
-          self.log("epoch", float(self.current_epoch))
+# multi-layered cnns
+class Basic_5cnv(Basic_cnv):
+  def __init__(self):
+    super().__init__(5)
 
-          print(f"{mode} macro_f1 score : ", epoch_macro_f1)
-          print(f"{mode} both : ", epoch_acc+epoch_macro_f1)
+  def forward(self,x):
+    out = super().forward(x)
+    out = self.max1(self.bn1(self.rel1(self.cnv1(out))))
+    out = self.max2(self.bn2(self.rel2(self.cnv2(out))))
+    out = self.max3(self.bn3(self.rel3(self.cnv3(out))))
+    out = self.max4(self.bn4(self.rel4(self.cnv4(out))))
+    out = self.max5(self.bn5(self.rel5(self.cnv5(out))))
+    out = self.flat(out)
+    out = self.doo(self.relo(self.fc1(out)))
+    out = self.fc2(out)
+    return out
 
-          # Tensorboard visualizations     
 
-          self.logger.experiment.add_scalar(f"Macro_f1/{task}_{mode}",
-                                              epoch_macro_f1,
-                                              self.current_epoch)
-          self.logger.experiment.add_scalar(f"Acc+Macro_f1/{task}_{mode}",
-                                              epoch_acc+epoch_macro_f1,
-                                              self.current_epoch)
-          logger.experiment.add_figure("Confusion matrix", epoch_dict['conf_mat'], self.current_epoch)
-          # logging histograms - Can slow down the model
-          #self.custom_histogram_adder()
-          self.reference_image = None
-          self.visualize_images = None
-          self.visualize_images_idxs = None
-          self.visualize_labels_age = None
-          self.visualize_labels_ethnicity = None
-          self.visualize_labels_gender = None
+# optimal model
+class Basic_4cnv(Basic_cnv):
+  def __init__(self):
+    super().__init__(4)
 
-    def on_train_epoch_end(self):
-      outputs = self.training_step_outputs
-      print(f"\nTraining for {training_indicator}")
-      if Multitasking:
-        self.multi_on_epoch_end(outputs, mode='Train')
-      else:
-        self.on_epoch_end(outputs, mode='Train')
-      self.training_step_outputs.clear()  # free memory
-        
-    def on_validation_epoch_end(self):
-      outputs = self.valid_step_outputs
-      if Multitasking:
-        self.multi_on_epoch_end(outputs, mode='Val')
-      else:
-        self.on_epoch_end(outputs, mode='Val')
-      self.valid_step_outputs.clear()  # free memory
-
-    def on_test_epoch_end(self):
-      outputs = self.test_step_outputs
-      if Multitasking:
-        self.multi_on_epoch_end(outputs, mode='Test')
-      else:
-        self.on_epoch_end(outputs, mode='Test')      
-      self.test_step_outputs.clear()  # free memory
-
-  #3 basics cnv model that adapts to number of layers
-  class Basic_cnv(BaseModel):
-    def __init__(self, num_of_layers):
-      super().__init__()
-      self.bn1 = nn.BatchNorm2d(base_features)
-      self.bn2 = nn.BatchNorm2d(base_features*2)
-      self.bn3 = nn.BatchNorm2d(base_features*4)
-      self.bn4 = nn.BatchNorm2d(base_features*8)
-      self.bn5 = nn.BatchNorm2d(base_features*16)
-      self.doi = nn.Dropout(0.1)
-      self.do1 = nn.Dropout(0.1)
-      self.do2 = nn.Dropout(0.1)
-      self.do3 = nn.Dropout(0.1)
-      self.do4 = nn.Dropout(0.1)
-      self.do5 = nn.Dropout(0.1)
-      self.doo = nn.Dropout(0.6)
-      self.cnv1 = nn.Conv2d(3, base_features, kernel_size = 3, padding = 1)
-      self.cnv2 = nn.Conv2d(base_features, base_features*2, kernel_size = 3, padding = 1)
-      self.cnv3 = nn.Conv2d(base_features*2, base_features*4, kernel_size = 3, padding = 1)
-      self.cnv4 = nn.Conv2d(base_features*4, base_features*8, kernel_size = 3, padding = 1)
-      self.cnv5 = nn.Conv2d(base_features*8, base_features*16, kernel_size = 3, padding = 1)
-      self.rel1 = nn.ReLU()
-      self.rel2 = nn.ReLU()
-      self.rel3 = nn.ReLU()
-      self.rel4 = nn.ReLU()
-      self.rel5 = nn.ReLU()
-      self.relo = nn.ReLU()
-      self.max1 = nn.MaxPool2d(2, 2)
-      self.max2 = nn.MaxPool2d(2, 2)
-      self.max3 = nn.MaxPool2d(2, 2)
-      self.max4 = nn.MaxPool2d(2, 2)
-      self.max5 = nn.MaxPool2d(2, 2)
-      self.flat = nn.Flatten()
-      num_of_features = int(IMG_SIZE/(2**num_of_layers))
-      num_of_features *= num_of_features
-      num_of_features *= base_features * (2**(num_of_layers-1))
-      self.fc1 = nn.Linear(num_of_features, hidden_neurons)
-      self.fc2 = nn.Linear(hidden_neurons, CLASSES)
-      if Multitasking:
-        self.fc_a = nn.Linear(hidden_neurons, 7)
-        self.fc_g = nn.Linear(hidden_neurons, 2)
-        self.fc_e = nn.Linear(hidden_neurons, 5)
-
-  # multi-layered cnns
-  class Basic_5cnv(Basic_cnv):
-    def __init__(self):
-      super().__init__(5)
-
-    def forward(self,x):
+  def forward(self,x):
+    out = x
+    if not USE_NORM:
       out = super().forward(x)
-      out = self.max1(self.bn1(self.rel1(self.cnv1(out))))
-      out = self.max2(self.bn2(self.rel2(self.cnv2(out))))
-      out = self.max3(self.bn3(self.rel3(self.cnv3(out))))
-      out = self.max4(self.bn4(self.rel4(self.cnv4(out))))
-      out = self.max5(self.bn5(self.rel5(self.cnv5(out))))
-      out = self.flat(out)
-      out = self.doo(self.relo(self.fc1(out)))
+    out = self.max1(self.bn1(self.rel1(self.cnv1(out))))
+    out = self.max2(self.bn2(self.rel2(self.cnv2(out))))
+    out = self.max3(self.bn3(self.rel3(self.cnv3(out))))
+    out = self.max4(self.bn4(self.rel4(self.cnv4(out))))
+    out = self.flat(out)
+    out = self.doo(self.relo(self.fc1(out)))
+    if Multitasking:
+      out_a = self.fc_a(out)
+      out_g = self.fc_g(out)
+      out_e = self.fc_e(out)
+      return {'a': out_a, 'g': out_g, 'e': out_e}
+    else:
       out = self.fc2(out)
       return out
 
+class Basic_3cnv(Basic_cnv):
+  def __init__(self):
+    super().__init__(3)
 
-  # optimal model
-  class Basic_4cnv(Basic_cnv):
-    def __init__(self):
-      super().__init__(4)
+  def forward(self,x):
+    out = super().forward(x)
+    out = self.max1(self.bn1(self.rel1(self.cnv1(out))))
+    out = self.max2(self.bn2(self.rel2(self.cnv2(out))))
+    out = self.max3(self.bn3(self.rel3(self.cnv3(out))))
+    out = self.flat(out)
+    out = self.doo(self.relo(self.fc1(out)))
+    out = self.fc2(out)
+    return out
 
-    def forward(self,x):
-      out = x
-      if not USE_NORM:
-        out = super().forward(x)
-      out = self.max1(self.bn1(self.rel1(self.cnv1(out))))
-      out = self.max2(self.bn2(self.rel2(self.cnv2(out))))
-      out = self.max3(self.bn3(self.rel3(self.cnv3(out))))
-      out = self.max4(self.bn4(self.rel4(self.cnv4(out))))
-      out = self.flat(out)
-      out = self.doo(self.relo(self.fc1(out)))
-      if Multitasking:
-        out_a = self.fc_a(out)
-        out_g = self.fc_g(out)
-        out_e = self.fc_e(out)
-        return {'a': out_a, 'g': out_g, 'e': out_e}
-      else:
-        out = self.fc2(out)
-        return out
+class Basic_2cnv(Basic_cnv):
+  def __init__(self):
+    super().__init__(2)
 
-  class Basic_3cnv(Basic_cnv):
-    def __init__(self):
-      super().__init__(3)
+  def forward(self,x):
+    out = super().forward(x)
+    out = self.max1(self.bn1(self.rel1(self.cnv1(out))))
+    out = self.max2(self.bn2(self.rel2(self.cnv2(out))))
+    out = self.flat(out)
+    out = self.doo(self.relo(self.fc1(out)))
+    out = self.fc2(out)
+    return out
 
-    def forward(self,x):
-      out = super().forward(x)
-      out = self.max1(self.bn1(self.rel1(self.cnv1(out))))
-      out = self.max2(self.bn2(self.rel2(self.cnv2(out))))
-      out = self.max3(self.bn3(self.rel3(self.cnv3(out))))
-      out = self.flat(out)
-      out = self.doo(self.relo(self.fc1(out)))
-      out = self.fc2(out)
-      return out
+class Basic_1cnv(Basic_cnv):
+  def __init__(self):
+    super().__init__(1)
 
-  class Basic_2cnv(Basic_cnv):
-    def __init__(self):
-      super().__init__(2)
+  def forward(self,x):
+    out = super().forward(x)
+    out = self.max1(self.bn1(self.rel1(self.cnv1(out))))
+    out = self.flat(out)
+    out = self.fc1(out)
+    out = self.fc2(out)
+    return out
 
-    def forward(self,x):
-      out = super().forward(x)
-      out = self.max1(self.bn1(self.rel1(self.cnv1(out))))
-      out = self.max2(self.bn2(self.rel2(self.cnv2(out))))
-      out = self.flat(out)
-      out = self.doo(self.relo(self.fc1(out)))
-      out = self.fc2(out)
-      return out
-
-  class Basic_1cnv(Basic_cnv):
-    def __init__(self):
-      super().__init__(1)
-
-    def forward(self,x):
-      out = super().forward(x)
-      out = self.max1(self.bn1(self.rel1(self.cnv1(out))))
-      out = self.flat(out)
-      out = self.fc1(out)
-      out = self.fc2(out)
-      return out
-
-  # bases of all transfer learning
-  class BaseTransfer(BaseModel):
-    def __init__(self, model, pretrained):
-      super().__init__()
-      self.pretrained = pretrained
-      # whether to use pretrained weight anf reeze, or train from scratch
-      if pretrained:
-        print("Using pretrained weights")
-        weights="DEFAULT"
-      else:
-        print("Training from scratch")
-        weights=None
-      self.backbone = model(weights=weights)
-      layers = list(self.backbone.children())[:-1]
-      self.feature_extractor = nn.Sequential(*layers)
-      if pretrained:
-        # layers are frozen by using eval()
-        self.feature_extractor.eval()
-        # freeze params
-        for param in self.feature_extractor.parameters():
-          param.requires_grad = False
+# bases of all transfer learning
+class BaseTransfer(BaseModel):
+  def __init__(self, model, pretrained):
+    super().__init__()
+    self.pretrained = pretrained
+    # whether to use pretrained weight anf reeze, or train from scratch
+    if pretrained:
+      print("Using pretrained weights")
+      weights="DEFAULT"
+    else:
+      print("Training from scratch")
+      weights=None
+    self.backbone = model(weights=weights)
+    layers = list(self.backbone.children())[:-1]
+    self.feature_extractor = nn.Sequential(*layers)
+    if pretrained:
+      # layers are frozen by using eval()
+      self.feature_extractor.eval()
+      # freeze params
+      for param in self.feature_extractor.parameters():
+        param.requires_grad = False
 
 
-    def forward(self, x):
-      representations = self.feature_extractor(x).flatten(1) 
-      x = self.classifier(representations)
-      return x
-        
-  class ResNet50(BaseTransfer):
-    def __init__(self, model=resnet50, pretrained=IS_PRETRAINED):
-      super().__init__(model, pretrained)
-      num_filters = self.backbone.fc.in_features
-      self.classifier = nn.Linear(num_filters, CLASSES)
+  def forward(self, x):
+    representations = self.feature_extractor(x).flatten(1) 
+    x = self.classifier(representations)
+    return x
+      
+class ResNet50(BaseTransfer):
+  def __init__(self, model=resnet50, pretrained=IS_PRETRAINED):
+    super().__init__(model, pretrained)
+    num_filters = self.backbone.fc.in_features
+    self.classifier = nn.Linear(num_filters, CLASSES)
 
-    def forward(self, x):
-      return super().forward(x)
+  def forward(self, x):
+    return super().forward(x)
 
-  class ResNet152(BaseTransfer):
-    def __init__(self, model=resnet152, pretrained=IS_PRETRAINED):
-      super().__init__(model, pretrained)
-      num_filters = self.backbone.fc.in_features
-      self.classifier = nn.Linear(num_filters, CLASSES)
+class ResNet152(BaseTransfer):
+  def __init__(self, model=resnet152, pretrained=IS_PRETRAINED):
+    super().__init__(model, pretrained)
+    num_filters = self.backbone.fc.in_features
+    self.classifier = nn.Linear(num_filters, CLASSES)
 
-    def forward(self, x):
-      return super().forward(x)
+  def forward(self, x):
+    return super().forward(x)
 
-  class VGG16(BaseTransfer):
-    def __init__(self, model=vgg16, pretrained=IS_PRETRAINED):
-      super().__init__(model, pretrained)
-      num_filters = self.backbone.classifier[0].in_features
-      self.classifier = self.backbone.classifier
-      if pretrained:
-        # layers are frozen by using eval()
-        self.classifier.eval()
-        # freeze params
-        for param in self.classifier.parameters():
-          param.requires_grad = False
-      self.classifier = nn.Linear(num_filters, CLASSES)
+class VGG16(BaseTransfer):
+  def __init__(self, model=vgg16, pretrained=IS_PRETRAINED):
+    super().__init__(model, pretrained)
+    num_filters = self.backbone.classifier[0].in_features
+    self.classifier = self.backbone.classifier
+    if pretrained:
+      # layers are frozen by using eval()
+      self.classifier.eval()
+      # freeze params
+      for param in self.classifier.parameters():
+        param.requires_grad = False
+    self.classifier = nn.Linear(num_filters, CLASSES)
 
-    def forward(self, x):
-      return super().forward(x)
+  def forward(self, x):
+    return super().forward(x)
 
-  class DenseNet121(BaseTransfer):
-    def __init__(self, model=densenet121, pretrained=IS_PRETRAINED):
-      super().__init__(model, pretrained)
-      num_filters = self.backbone.classifier.in_features    
-      self.classifier = nn.Linear(num_filters*7*7, CLASSES)
+class DenseNet121(BaseTransfer):
+  def __init__(self, model=densenet121, pretrained=IS_PRETRAINED):
+    super().__init__(model, pretrained)
+    num_filters = self.backbone.classifier.in_features    
+    self.classifier = nn.Linear(num_filters*7*7, CLASSES)
 
-    def forward(self, x):
-      return super().forward(x)
+  def forward(self, x):
+    return super().forward(x)
 
-  class DenseNet201(BaseTransfer):
-    def __init__(self, model=densenet201, pretrained=IS_PRETRAINED):
-      super().__init__(model, pretrained)
-      num_filters = self.backbone.classifier.in_features    
-      self.classifier = nn.Linear(num_filters*7*7, CLASSES)
+class DenseNet201(BaseTransfer):
+  def __init__(self, model=densenet201, pretrained=IS_PRETRAINED):
+    super().__init__(model, pretrained)
+    num_filters = self.backbone.classifier.in_features    
+    self.classifier = nn.Linear(num_filters*7*7, CLASSES)
 
-    def forward(self, x):
-      return super().forward(x)
+  def forward(self, x):
+    return super().forward(x)
 
-  class EfficientNet_V2_S(BaseTransfer):
-    def __init__(self, model=efficientnet_v2_s, pretrained=IS_PRETRAINED):
-      super().__init__(model, pretrained)
-      num_filters = self.backbone.classifier[1].in_features    
-      self.classifier = self.backbone.classifier
-      self.classifier[1] = nn.Linear(num_filters, CLASSES)
+class EfficientNet_V2_S(BaseTransfer):
+  def __init__(self, model=efficientnet_v2_s, pretrained=IS_PRETRAINED):
+    super().__init__(model, pretrained)
+    num_filters = self.backbone.classifier[1].in_features    
+    self.classifier = self.backbone.classifier
+    self.classifier[1] = nn.Linear(num_filters, CLASSES)
 
-    def forward(self, x):
-      return super().forward(x)
-        
-  class EfficientNet_V2_M(BaseTransfer):
-    def __init__(self, model=efficientnet_v2_m, pretrained=IS_PRETRAINED):
-      super().__init__(model, pretrained)
-      num_filters = self.backbone.classifier[1].in_features    
-      self.classifier = self.backbone.classifier
-      self.classifier[1] = nn.Linear(num_filters, CLASSES)
+  def forward(self, x):
+    return super().forward(x)
+      
+class EfficientNet_V2_M(BaseTransfer):
+  def __init__(self, model=efficientnet_v2_m, pretrained=IS_PRETRAINED):
+    super().__init__(model, pretrained)
+    num_filters = self.backbone.classifier[1].in_features    
+    self.classifier = self.backbone.classifier
+    self.classifier[1] = nn.Linear(num_filters, CLASSES)
 
-    def forward(self, x):
-      return super().forward(x)
-        
-  class EfficientNet_V2_L(BaseTransfer):
-    def __init__(self, model=efficientnet_v2_l, pretrained=IS_PRETRAINED):
-      super().__init__(model, pretrained)
-      num_filters = self.backbone.classifier[1].in_features    
-      self.classifier = self.backbone.classifier
-      self.classifier[1] = nn.Linear(num_filters, CLASSES)
+  def forward(self, x):
+    return super().forward(x)
+      
+class EfficientNet_V2_L(BaseTransfer):
+  def __init__(self, model=efficientnet_v2_l, pretrained=IS_PRETRAINED):
+    super().__init__(model, pretrained)
+    num_filters = self.backbone.classifier[1].in_features    
+    self.classifier = self.backbone.classifier
+    self.classifier[1] = nn.Linear(num_filters, CLASSES)
 
-    def forward(self, x):
-      return super().forward(x)
+  def forward(self, x):
+    return super().forward(x)
 
-  class InceptionResnetV1_Facenet(BaseModel):
-    def __init__(self, pretrained=IS_PRETRAINED):
-      super().__init__()
-      # Create an inception resnet:
-      self.inception_resnet = InceptionResnetV1(classify=True,
-        pretrained='vggface2' if pretrained else None,
-        num_classes=CLASSES,
-        device = device,
-        dropout_prob=0.5)
-      if pretrained:
-        for param in self.inception_resnet.parameters():
-          param.requires_grad = False
-        if not MORE_FREEZE:
-          for param in self.inception_resnet.last_linear.parameters():
-            param.requires_grad = True
+class InceptionResnetV1_Facenet(BaseModel):
+  def __init__(self, pretrained=IS_PRETRAINED):
+    super().__init__()
+    # Create an inception resnet:
+    self.inception_resnet = InceptionResnetV1(classify=True,
+      pretrained='vggface2' if pretrained else None,
+      num_classes=CLASSES,
+      device = device,
+      dropout_prob=0.5)
+    if pretrained:
+      for param in self.inception_resnet.parameters():
+        param.requires_grad = False
+      if not MORE_FREEZE:
+        for param in self.inception_resnet.last_linear.parameters():
+          param.requires_grad = True
 
-      num_filters = self.inception_resnet.logits.in_features
-      self.inception_resnet.logits = nn.Linear(num_filters, CLASSES)
+    num_filters = self.inception_resnet.logits.in_features
+    self.inception_resnet.logits = nn.Linear(num_filters, CLASSES)
 
-    def forward(self, x):
-      out = super().forward(x)
-      out = self.inQception_resnet(out)
-      return out
+  def forward(self, x):
+    out = super().forward(x)
+    out = self.inQception_resnet(out)
+    return out
 class ResidualAttentionModel(BaseModel):
     # for input size 224
     def __init__(self):
