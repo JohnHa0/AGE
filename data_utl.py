@@ -88,8 +88,6 @@ df_new['gender'] = expanded_df['gender']
 df_new['age'] = expanded_df['age']
 df_new['ethnicity'] = expanded_df['ethnicity']
 
-
-
 # Labeled for gender and nationality
 
 df_new['gender_label'] = expanded_df['gender'].map(gender_encoding)
@@ -97,8 +95,8 @@ df_new['ethnicity_label'] = expanded_df['ethnicity'].map(lambda x: nation_encodi
 
 # labeled for ages
 # LABEL_TO_AGE_RANGES = ['0-18', '19-30', '31-40', '41-50', '51-60', '61-80', '81-100']
-bins = [18, 30, 40, 50, 60, 80, 100]
-age_ranges = ['18-30', '31-40', '41-50', '51-60', '61-80', '81-100']  # !!!!age =0 will not gain the data !!!!
+bins = [0, 30, 40, 50, 60, 80, 100]
+age_ranges = ['0-30', '31-40', '41-50', '51-60', '61-80', '81-100']  # !!!!age =0 will not gain the data !!!!
 # age_labels = ['0', '1', '2', '3', '4', '5','6']
 # 使用cut函数进行分段编码 Right false 左闭右开
 df_new['age_cat'] = pd.cut(expanded_df['age'], bins=bins, labels=age_ranges, right=False)

@@ -2323,7 +2323,7 @@ X_train
 
 # predicting new images
 if __name__ == '__main__' and not Multitasking:
-  imgs_to_predict = pd.read_csv('data/validation_data.xlsx.csv')['img_idx'][7:11]
+  imgs_to_predict = pd.read_csv('./data/validation_data.xlsx.csv')['img_idx'][7:11]
   #reproducability
   random_seed = 42
   deterministic = False
@@ -2368,9 +2368,9 @@ if __name__ == '__main__' and not Multitasking:
     start_img_idx = 34
     rng = random.Random()
     img_idxs = rng.sample(range(1, 1001), 4)
-    img_idxs = [i for i in range(start_img_idx, start_img_idx+9)]
-    imgs_to_predict = pd.read_csv('data/valid.csv')['img_idx'][img_idxs]
-    faces_pred=FacesDataModule(train_transform, val_transform, imgs_to_predict)
+    img_idxs = [i for i in range(start_img_idx, start_img_idx + 9)]
+    imgs_to_predict = pd.read_excel('./data/validation_data.xlsx')['img_idx'][img_idxs]
+    faces_pred = FacesDataModule(train_transform, val_transform, imgs_to_predict)
     print("imgs_to_predict")
     print(imgs_to_predict)
     for i in range(3):
@@ -2460,7 +2460,7 @@ predict_viz_image_limit = 36
 
 # predicting new images
 if __name__ == '__main__' and not Multitasking:
-  imgs_to_predict = pd.read_excel('data/validation_data.xlsx')['img_idx'][7:11]
+  imgs_to_predict = pd.read_excel('./data/validation_data.xlsx')['img_idx'][7:11]
   #reproducability
   random_seed = 42
   deterministic = False
@@ -2506,9 +2506,9 @@ if __name__ == '__main__' and not Multitasking:
     rng = random.Random()
     img_idxs = rng.sample(range(1, 1001), 4)
     img_idxs = [i for i in range(start_img_idx, start_img_idx+9)]
-    img_idxs = [i for i in range(start_img_idx, start_img_idx+predict_viz_image_limit)]
-    df_f = pd.read_excel(('data/validation_data.xlsx'))
-    df_f = df_f[df_f['gender_label']==1]
+    img_idxs = [i for i in range(start_img_idx, start_img_idx + predict_viz_image_limit)]
+    df_f = pd.read_excel(('./data/validation_data.xlsx'))
+    df_f = df_f[df_f['gender_label'] == 1]
     imgs_to_predict = df_f['img_idx'].iloc[img_idxs]
     faces_pred=FacesDataModule(train_transform, val_transform, imgs_to_predict)
     print("imgs_to_predict")
