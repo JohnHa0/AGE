@@ -23,9 +23,9 @@ print(f"Validation data: {len(validation_data)} rows")
 print(f"Test data: {len(test_data)} rows")
 
 # 如果需要，可以将这些子集保存到新的Excel文件中
-train_data.to_excel('./data/train_data.xlsx', index=True)
-validation_data.to_excel('./data/validation_data.xlsx', index=True)
-test_data.to_excel('./data/test_data.xlsx', index=True)
+train_data.to_excel(r'./Full code notebook/data/train_data.xlsx', index=True)
+validation_data.to_excel(r'./Full code notebook/data/validation_data.xlsx', index=True)
+test_data.to_excel(r'./Full code notebook/data/test_data.xlsx', index=True)
 
 train_data.to_csv('./data/train_data.csv', index=True)
 validation_data.to_csv('./data/validation_data.csv', index=True)

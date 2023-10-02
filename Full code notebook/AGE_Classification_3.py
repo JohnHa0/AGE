@@ -906,166 +906,164 @@ df.dtypes
 
 df.shape
 
-
 # In[ ]:
 
 
-df.isnull().sum()*100/df.shape[0]
-
-
-# In[ ]:
-
-
-df.describe()
-
-
-# ###Data visualization
+df.isnull().sum() * 100 / df.shape[0]
 
 # In[ ]:
 
-
-df.head()
-
-
-# In[ ]:
-
-
-# age distribution
-if __name__ == '__main__':
-  fig = px.histogram(df, x="age", nbins=116)
-  fig.show()
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-# age category distribution
-if __name__ == '__main__':
-  fig = px.histogram(df.sort_values('age_label'), x="age_cat")
-  fig.show()
-
-
-# In[ ]:
-
-
-df[(df['age'] >= 15) & (df['age'] <= 30)]
-
-
-# In[ ]:
-
-
-if __name__ == '__main__':
-  df_15_30 = df[(df['age'] >= 15) & (df['age'] <= 30)].groupby('age').count().reset_index().loc[:, ['age', 'age_label']]
-  df_15_30.rename(columns={"age_label": "count"}, inplace=True)
-  df_15_30
-
-
-# In[ ]:
-
-
-if __name__ == '__main__':
-  fig = px.bar(df_15_30, x="age", y='count')
-  fig.show()
-
-
-# In[ ]:
-
-
-if __name__ == '__main__':
-  df_31_40 = df[(df['age'] >= 31) & (df['age'] <= 40)].groupby('age').count().reset_index().loc[:, ['age', 'age_label']]
-  df_31_40.rename(columns={"age_label": "count"}, inplace=True)
-  df_31_40
-
-
-# In[ ]:
-
-
-if __name__ == '__main__':
-  fig = px.bar(df_31_40, x="age", y='count')
-  fig.show()
-
-
-# In[ ]:
-
-
-if __name__ == '__main__':
-  gender_distribution = df.groupby(['age_cat', 'gender'])['age_label'].count()
-  gd_df = gender_distribution.reset_index()
-  gd_df.rename(columns={"age_label": "count"}, inplace=True)
-  print(gd_df)
-
-
-# In[ ]:
-
-
-if __name__ == '__main__':
-  fig = px.bar(gd_df, x="age_cat", color="gender",
-              y='count',
-              title="Gender distribution grouped by age categories",
-              barmode='group'
-              )
-  fig.show()
-
-
-# In[ ]:
-
-
-if __name__ == '__main__':
-  ethnicity_distribution = df.groupby(['age_cat', 'ethnicity'])['age_label'].count()
-  et_df = ethnicity_distribution.reset_index()
-  et_df.rename(columns={"age_label": "count"}, inplace=True)
-  print(et_df)
-
-
-# In[ ]:
-
-
-if __name__ == '__main__':
-  fig = px.bar(et_df, x="age_cat", color="ethnicity",
-              y='count',
-              title="Ethnicity distribution grouped by age categories",
-              barmode='group'
-              )
-  fig.show()
-
-
-# In[ ]:
-
-
-df.head()
-
-
-# In[ ]:
-
-
-if __name__ == '__main__':
-  age_distribution = df.groupby("age_cat")["age"].agg(['mean', lambda x: pd.Series.mode(x)[0]]).rename(columns={'<lambda_0>':'mode'})
-  ad_df = age_distribution.reset_index().sort_values('mean')
-  print(ad_df)
-
-
-# In[ ]:
-
-
-# gender distribution
-if __name__ == '__main__':
-  fig = px.histogram(df, x="gender")
-  fig.show()
-
-
-# In[ ]:
-
-
-# ethnicity distribution
-if __name__ == '__main__':
-  fig = px.histogram(df, x="ethnicity")
-  fig.show()
+#
+# df.describe()
+#
+#
+# # ###Data visualization
+#
+# # In[ ]:
+#
+#
+# df.head()
+#
+#
+# # In[ ]:
+#
+#
+# # age distribution
+# if __name__ == '__main__':
+#   fig = px.histogram(df, x="age", nbins=116)
+#   fig.show()
+#
+#
+# # In[ ]:
+#
+#
+#
+#
+#
+# # In[ ]:
+#
+#
+# # age category distribution
+# if __name__ == '__main__':
+#   fig = px.histogram(df.sort_values('age_label'), x="age_cat")
+#   fig.show()
+#
+#
+# # In[ ]:
+#
+#
+# df[(df['age'] >= 15) & (df['age'] <= 30)]
+#
+#
+# # In[ ]:
+#
+#
+# if __name__ == '__main__':
+#   df_15_30 = df[(df['age'] >= 15) & (df['age'] <= 30)].groupby('age').count().reset_index().loc[:, ['age', 'age_label']]
+#   df_15_30.rename(columns={"age_label": "count"}, inplace=True)
+#   df_15_30
+#
+#
+# # In[ ]:
+#
+#
+# if __name__ == '__main__':
+#   fig = px.bar(df_15_30, x="age", y='count')
+#   fig.show()
+#
+#
+# # In[ ]:
+#
+#
+# if __name__ == '__main__':
+#   df_31_40 = df[(df['age'] >= 31) & (df['age'] <= 40)].groupby('age').count().reset_index().loc[:, ['age', 'age_label']]
+#   df_31_40.rename(columns={"age_label": "count"}, inplace=True)
+#   df_31_40
+#
+#
+# # In[ ]:
+#
+#
+# if __name__ == '__main__':
+#   fig = px.bar(df_31_40, x="age", y='count')
+#   fig.show()
+#
+#
+# # In[ ]:
+#
+#
+# if __name__ == '__main__':
+#   gender_distribution = df.groupby(['age_cat', 'gender'])['age_label'].count()
+#   gd_df = gender_distribution.reset_index()
+#   gd_df.rename(columns={"age_label": "count"}, inplace=True)
+#   print(gd_df)
+#
+#
+# # In[ ]:
+#
+#
+# if __name__ == '__main__':
+#   fig = px.bar(gd_df, x="age_cat", color="gender",
+#               y='count',
+#               title="Gender distribution grouped by age categories",
+#               barmode='group'
+#               )
+#   fig.show()
+#
+#
+# # In[ ]:
+#
+#
+# if __name__ == '__main__':
+#   ethnicity_distribution = df.groupby(['age_cat', 'ethnicity'])['age_label'].count()
+#   et_df = ethnicity_distribution.reset_index()
+#   et_df.rename(columns={"age_label": "count"}, inplace=True)
+#   print(et_df)
+#
+#
+# # In[ ]:
+#
+#
+# if __name__ == '__main__':
+#   fig = px.bar(et_df, x="age_cat", color="ethnicity",
+#               y='count',
+#               title="Ethnicity distribution grouped by age categories",
+#               barmode='group'
+#               )
+#   fig.show()
+#
+#
+# # In[ ]:
+#
+#
+# df.head()
+#
+#
+# # In[ ]:
+#
+#
+# if __name__ == '__main__':
+#   age_distribution = df.groupby("age_cat")["age"].agg(['mean', lambda x: pd.Series.mode(x)[0]]).rename(columns={'<lambda_0>':'mode'})
+#   ad_df = age_distribution.reset_index().sort_values('mean')
+#   print(ad_df)
+#
+#
+# # In[ ]:
+#
+#
+# # gender distribution
+# if __name__ == '__main__':
+#   fig = px.histogram(df, x="gender")
+#   fig.show()
+#
+#
+# # In[ ]:
+#
+#
+# # ethnicity distribution
+# if __name__ == '__main__':
+#   fig = px.histogram(df, x="ethnicity")
+#   fig.show()
 
 
 # ##Pytorch Lightning modules
@@ -1242,7 +1240,7 @@ class FacesDataModule(pl.LightningDataModule):
 # In[ ]:
 
 
-images = read_and_preprocess_img_list(df.index[38:46], True, num_cols=4, transforms=train_transform)
+# images = read_and_preprocess_img_list(df.index[38:46], True, num_cols=4, transforms=train_transform)
 
 
 # ###Model module
@@ -2307,7 +2305,6 @@ if __name__ == '__main__' and not IS_PREDICT:
 
 X_train
 
-
 # ### Training visualization
 # 
 # 
@@ -2315,8 +2312,8 @@ X_train
 # In[ ]:
 
 
-get_ipython().run_line_magic('load_ext', 'tensorboard')
-get_ipython().run_line_magic('tensorboard', '--logdir tb_logs/')
+# get_ipython().run_line_magic('load_ext', 'tensorboard')
+# get_ipython().run_line_magic('tensorboard', '--logdir tb_logs/')
 
 
 # ###Predicting using the trained model
