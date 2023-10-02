@@ -3,8 +3,8 @@ import pandas as pd
 # 定义编码
 # Gender
 gender_encoding = {
-    '男': 0,
-    '女': 1
+    'male': 0,
+    'female': 1
 }
 # Nationality
 nation_encoding = {
