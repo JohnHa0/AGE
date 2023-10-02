@@ -20,13 +20,13 @@ def replace_characters(df):
   df['gender'] = df['gender'].replace({"男": "Male", "女": "Female"})
   # replace ethnicity 
   replace_dict = {
-    "维吾尔族": "Wei",
-    "藏族": "Zang",
-    "回族": "Hui",
-    "汉族": "Han"
-    # ... add more replacements as needed
-    }
-  df['ethnicity'] = df['A'].replace(replace_dict)
+      "维吾尔族": "Wei",
+      "藏族": "Zang",
+      "回族": "Hui",
+      "汉族": "Han"
+      # ... add more replacements as needed
+  }
+  df['ethnicity'] = df['ethnicity'].replace(replace_dict)
   # 为不在替换列表中的值设置固定值"unknown"
   df.loc[~df['ethnicity'].isin(replace_dict.values()), 'ethnicity'] = "Others"
   return df
