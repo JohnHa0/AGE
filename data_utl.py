@@ -8,16 +8,29 @@ gender_encoding = {
 }
 # Nationality
 nation_encoding = {
-    '藏族': 0,
-    '回族': 1,
-    '汉族': 2,
-    '维吾尔族': 3,
-    '满族': 4,
-    '蒙古族': 5,
-    '彝族': 6,
-    '朝鲜族': 7,
-    '其他': 8,
+    '维吾尔族': 0,
+    '藏族': 1,
+    '回族': 2,
+    '汉族': 3,
+    '其他': 4,
 }
+
+def replace_characters(df):
+  # replace gender
+  df['gender'] = df['gender'].replace({"男": "Male", "女": "Female"})
+  # replace ethnicity 
+  replace_dict = {
+    "维吾尔族": "Wei",
+    "藏族": "Zang",
+    "回族": "Hui",
+    "汉族": "Han"
+    # ... add more replacements as needed
+    }
+  df['ethnicity'] = df['A'].replace(replace_dict)
+  # 为不在替换列表中的值设置固定值"unknown"
+  df.loc[~df['ethnicity'].isin(replace_dict.values()), 'ethnicity'] = "Others"
+  return df
+
 
 # Age Bins and Labels
 # LABEL_TO_AGE_RANGES = ['0-18', '19-30', '31-40', '41-50', '51-60', '61-80', '81-100']
@@ -90,5 +103,6 @@ df_new['age_label'] = df_new['age_cat'].map(age_labels)
 
 # Reorder
 # expanded_df = expanded_df[cols_order]
+df_new = replace_characters(df_new)
 # Save files
 df_new.to_excel("./data/data_with_labels.xlsx", index=False)
