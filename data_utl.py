@@ -8,27 +8,27 @@ gender_encoding = {
 }
 # Nationality
 nation_encoding = {
-    '维吾尔族': 0,
-    '藏族': 1,
-    '回族': 2,
-    '汉族': 3,
-    '其他': 4,
+    'wei': 0,
+    'zang': 1,
+    'hui': 2,
+    'han': 3,
+    'other': 4,
 }
 
 def replace_characters(df):
   # replace gender
-  df['gender'] = df['gender'].replace({"男": "Male", "女": "Female"})
+  df['gender'] = df['gender'].replace({"男": "male", "女": "female"})
   # replace ethnicity 
   replace_dict = {
-      "维吾尔族": "Wei",
-      "藏族": "Zang",
-      "回族": "Hui",
-      "汉族": "Han"
+      "维吾尔族": "wei",
+      "藏族": "zang",
+      "回族": "hui",
+      "汉族": "han"
       # ... add more replacements as needed
   }
   df['ethnicity'] = df['ethnicity'].replace(replace_dict)
   # 为不在替换列表中的值设置固定值"unknown"
-  df.loc[~df['ethnicity'].isin(replace_dict.values()), 'ethnicity'] = "Others"
+  df.loc[~df['ethnicity'].isin(replace_dict.values()), 'ethnicity'] = "other"
   return df
 
 
@@ -79,15 +79,19 @@ for _, row in df.iterrows():
 expanded_df = pd.DataFrame(expanded_data)
 df_new = pd.DataFrame(columns=cols_order)
 
+
 df_new['img_idx'] = expanded_df['img_idx']
 df_new['gender'] = expanded_df['gender']
 df_new['age'] = expanded_df['age']
 df_new['ethnicity'] = expanded_df['ethnicity']
 
+# 格式化
+df_new = replace_characters(df_new)
+
 # Labeled for gender and nationality
 
 df_new['gender_label'] = expanded_df['gender'].map(gender_encoding)
-df_new['ethnicity_label'] = expanded_df['ethnicity'].map(lambda x: nation_encoding.get(x, 8))
+df_new['ethnicity_label'] = expanded_df['ethnicity'].map(lambda x: nation_encoding.get(x, 4))
 
 # labeled for ages
 # LABEL_TO_AGE_RANGES = ['0-18', '19-30', '31-40', '41-50', '51-60', '61-80', '81-100']
