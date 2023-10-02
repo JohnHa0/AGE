@@ -873,9 +873,9 @@ else:
   # X_train = pd.read_csv('data/train.csv', index_col=1)
   # X_val = pd.read_csv('data/valid.csv', index_col=1)
   # X_test = pd.read_csv('data/test.csv', index_col=1)
-  X_train = pd.read_excel('./data/train_data.xlsx', index_col=1)
-  X_val = pd.read_excel('./data/validation_data.xlsx', index_col=1)
-  X_test = pd.read_excel('./data/test_data.xlsx', index_col=1)
+  X_train = pd.read_excel(r'./data/train_data.xlsx', index_col=1)
+  X_val = pd.read_excel(r'./data/validation_data.xlsx', index_col=1)
+  X_test = pd.read_excel(r'./data/test_data.xlsx', index_col=1)
   df = pd.concat([X_train, X_val, X_test])
 df_copy = df.copy(deep=True).assign(predicted_gender_label = None)
 df_copy = df_copy.copy(deep=True).assign(predicted_ethnicity_label = None)
@@ -2323,7 +2323,7 @@ X_train
 
 # predicting new images
 if __name__ == '__main__' and not Multitasking:
-  imgs_to_predict = pd.read_csv('./data/validation_data.xlsx.csv')['img_idx'][7:11]
+  imgs_to_predict = pd.read_excel(r'./data/validation_data.xlsx')['img_idx'][7:11]
   #reproducability
   random_seed = 42
   deterministic = False
@@ -2369,7 +2369,7 @@ if __name__ == '__main__' and not Multitasking:
     rng = random.Random()
     img_idxs = rng.sample(range(1, 1001), 4)
     img_idxs = [i for i in range(start_img_idx, start_img_idx + 9)]
-    imgs_to_predict = pd.read_excel('./data/validation_data.xlsx')['img_idx'][img_idxs]
+    imgs_to_predict = pd.read_excel(r'./data/validation_data.xlsx')['img_idx'][img_idxs]
     faces_pred = FacesDataModule(train_transform, val_transform, imgs_to_predict)
     print("imgs_to_predict")
     print(imgs_to_predict)
@@ -2460,7 +2460,7 @@ predict_viz_image_limit = 36
 
 # predicting new images
 if __name__ == '__main__' and not Multitasking:
-  imgs_to_predict = pd.read_excel('./data/validation_data.xlsx')['img_idx'][7:11]
+  imgs_to_predict = pd.read_excel(r'./data/validation_data.xlsx')['img_idx'][7:11]
   #reproducability
   random_seed = 42
   deterministic = False
@@ -2507,7 +2507,7 @@ if __name__ == '__main__' and not Multitasking:
     img_idxs = rng.sample(range(1, 1001), 4)
     img_idxs = [i for i in range(start_img_idx, start_img_idx+9)]
     img_idxs = [i for i in range(start_img_idx, start_img_idx + predict_viz_image_limit)]
-    df_f = pd.read_excel(('./data/validation_data.xlsx'))
+    df_f = pd.read_excel((r'./data/validation_data.xlsx'))
     df_f = df_f[df_f['gender_label'] == 1]
     imgs_to_predict = df_f['img_idx'].iloc[img_idxs]
     faces_pred=FacesDataModule(train_transform, val_transform, imgs_to_predict)
