@@ -269,9 +269,9 @@ METRIC_TO_MONITOR = 'Val_both' if not Multitasking else "Val_total_loss"
 GPU_NAME = torch.cuda.get_device_name(USED_GPU_NUM).replace(' ', '_') if IS_GPU_AVAILABLE else 'CPU'
 device = (f'cuda:{USED_GPU_NUM}' if torch.cuda.is_available() else 'cpu')
 # LABEL_TO_AGE_RANGES = ['0-2', '3-6', '7-14', '15-30', '31-40', '41-65', '66-116']
-LABEL_TO_AGE_RANGES = ['18-30', '31-40', '41-50', '51-60', '61-80', '81-100']
+LABEL_TO_AGE_RANGES = ['0-30', '31-40', '41-50', '51-60', '61-80', '81-100']
 LABEL_TO_GENDER = ['男', '女']
-LABEL_TO_ETHNICITY = ['藏族', '汉族', '维吾尔族', '满族', '蒙古族','彝族','朝鲜族','其他'] # other includes Hispanic, Latino, Middle Eastern, etc...
+LABEL_TO_ETHNICITY = ['wei', 'zang', 'hui', 'han', 'other']  # other includes Hispanic, Latino, Middle Eastern, etc...
 
 
 PARAMS = {
